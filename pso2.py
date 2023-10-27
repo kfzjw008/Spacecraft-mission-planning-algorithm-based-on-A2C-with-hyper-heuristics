@@ -17,10 +17,7 @@ def PSOTSP(xy, dmat, Popsize, IterNum, showProg, showResult):
     showProg = bool(showProg)
     showResult = bool(showResult)
 
-    # 画出城市位置分布图
-    plt.figure(1)
-    plt.plot(xy[:, 0], xy[:, 1], 'k.', markersize=14)
-    plt.title('城市坐标位置')
+
 
     # PSO参数初始化
     c1 = 0.1
@@ -41,7 +38,7 @@ def PSOTSP(xy, dmat, Popsize, IterNum, showProg, showResult):
 
     # 产生初始位置和速度
     for i in range(Popsize):
-        pop[i, :] = np.random.permutation(N)
+        pop[i, :] = np.random.permutation(N)#随机生成一个N长度的随机序列作为初始化粒子
         v[i, :] = np.random.permutation(N)
 
     # 计算粒子适应度值
@@ -194,6 +191,9 @@ def updatePosition(pop, v):
 
 import numpy as np
 
+
+
+
 # 生成随机城市坐标
 #np.random.seed(0)
 num_cities = 20
@@ -203,6 +203,11 @@ cities = np.random.rand(num_cities, 2) * 100
 N = cities.shape[0]
 a = np.meshgrid(range(N))
 dmat = np.reshape(np.sqrt(np.sum((np.expand_dims(cities, axis=1) - np.expand_dims(cities, axis=0))**2, axis=2)), (N, N))
+
+# 画出城市位置分布图
+plt.figure(1)
+plt.plot(cities[:, 0], cities[:, 1], 'k.', markersize=14)
+plt.title('城市坐标位置')
 
 # 运行 PSOTSP 算法
 result = PSOTSP(cities, dmat, Popsize=100, IterNum=1000, showProg=True, showResult=True)
