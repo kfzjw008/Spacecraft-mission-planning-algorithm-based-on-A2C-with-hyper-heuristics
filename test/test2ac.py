@@ -30,19 +30,19 @@ timess=0
 
 #参数设置
 pop = 100 #粒子总数
-dim = 20 #数据维度，状态空间维度
+dim = 30 #数据维度，状态空间维度
 ub = np.ones(dim) * 1 #粒子上界
 lb = np.ones(dim) * -1#粒子下界
 vmax = (ub - lb) * 0.1 #粒子速度最大值，PSO专用
 vmin = -vmax #粒子速度最小值，PSO专用
 maxIter = 2 #算法一次最大迭代次数
-EmaxIter =300 #一轮次内最大的算法迭代次数
+EmaxIter =20 #一轮次内最大的算法迭代次数
 cmin=0 #初始坐标最小值
 cmax=100 #初始坐标最大值
 action_dims =4 #动作空间维度
 actor_lr = 1e-3 # 学习速率，用于更新Actor模型的参数
 critic_lr = 1e-2 # 学习速率，用于更新Critic模型的参数
-num_episodes = 100 # 总的训练轮次（即训练多少个episodes）
+num_episodes = 20 # 总的训练轮次（即训练多少个episodes）
 hidden_dim = 120 # 隐藏层的维度，影响模型的复杂度和表达能力
 gamma = 0.98 # 折扣因子，用于计算奖励的折现值，影响智能体对未来奖励的考虑程度
 from Actor_Critic.A2C.AC import ActorCritic
@@ -109,9 +109,9 @@ return_list,transition_dict,state,Best_fitness,Best_Pos = train_on_policy_agent(
 end_time = time.time()
 elapsed_time = end_time - start_time
 
-#保存模型
-torch.save(PolicyNet.state_dict(), 'policy_net.pth')
-torch.save(ValueNet.state_dict(), 'value_net.pth')
+# 保存模型
+torch.save(agent.actor.state_dict(), '../Actor_Critic/Net/policy_net.pth')
+torch.save(agent.critic.state_dict(), '../Actor_Critic/Net/value_net.pth')
 #结果输出
 
 YBest_Pos = np.argsort(Best_Pos)
@@ -122,9 +122,14 @@ print("用时:",elapsed_time)
 print("实际算法用时：",elapsed_time-timess)
 print("算法时间占比：",(elapsed_time-timess)/(elapsed_time))
 #动作统计
-action_counts.action_counts(transition_dict)
 
+action_counts.action_counts(transition_dict,action_counts)
 
+'''
+with torch.no_grad():  # 关闭梯度计算，节省内存，加速计算
+    predictions = model(new_data)  # 得到模型的预测结果
+
+'''
 
 #画图
 plta2c(return_list)

@@ -1,4 +1,4 @@
-def action_counts(transition_dict):
+def action_counts(transition_dict,action_counts):
     # 初始化动作计数器
     action_counts = {0: 0, 1: 0, 2: 0, 3: 0}
 
