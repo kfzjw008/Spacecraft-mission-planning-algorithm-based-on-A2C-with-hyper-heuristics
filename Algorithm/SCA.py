@@ -3,7 +3,21 @@ import numpy as np
 from utils.BoundaryCheck import BoundaryCheck
 from utils.initialization import initialization
 
-
+#正余弦优化算法
+'''
+%%--------------正余弦优化算法----------------------%%
+%% 输入：
+%   pop:种群数量
+%   dim:单个个体的维度
+%   ub:上边界信息，维度为[1,dim];
+%   lb:下边界信息，维度为[1,dim];
+%   fobj:为适应度函数接口
+%   maxIter: 算法的最大迭代次数，用于控制算法的停止。
+%% 输出：
+%   Best_Pos：为正余弦算法找到的最优位置
+%   Best_fitness: 最优位置对应的适应度值
+%   IterCure:  用于记录每次迭代的最佳适应度，即后续用来绘制迭代曲线。
+'''
 def SCA(pop, dim, ub, lb, fobj, maxIter, X=None):
     a = 2
 
@@ -45,5 +59,5 @@ def SCA(pop, dim, ub, lb, fobj, maxIter, X=None):
     Best_Pos = gBest
     Best_fitness = gBestFitness
 
-    return Best_Pos, Best_fitness, IterCurve, X
+    return X,Best_Pos, Best_fitness, IterCurve
 

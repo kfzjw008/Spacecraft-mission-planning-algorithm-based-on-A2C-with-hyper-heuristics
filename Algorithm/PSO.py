@@ -2,6 +2,8 @@ import numpy as np
 
 from utils.BoundaryCheck import BoundaryCheck
 
+
+
 '''
 %%--------------粒子群函数----------------------%%
 %% 输入：
@@ -68,6 +70,6 @@ def PSO(pop, dim, ub, lb, fobj, vmax, vmin, maxIter, X=None, V=None):
         Best_fitness = gBestFitness
         IterCurve[t] = gBestFitness
 
-    return Best_Pos, Best_fitness, IterCurve
+    return X,Best_Pos, Best_fitness, IterCurve
 
 

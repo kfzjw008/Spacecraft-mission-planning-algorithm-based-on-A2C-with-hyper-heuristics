@@ -1,4 +1,8 @@
 import matplotlib.pyplot as plt
+
+from utils import rl_utils
+
+
 #城市坐标图绘制
 def plot_city_coordinates(city_coordinates):
     x, y = zip(*city_coordinates)
@@ -46,3 +50,18 @@ def plot_city_coordinates_line(city_coordinates, visit_order):
     plt.legend()
     plt.show()
 
+def plta2c(return_list):
+    # 画图
+    episodes_list = list(range(len(return_list)))
+    plt.plot(episodes_list, return_list)
+    plt.xlabel('Episodes')
+    plt.ylabel('Returns')
+    plt.title('Actor-Critic on {}'.format("A2CHH"))
+    plt.show()
+
+    mv_return = rl_utils.moving_average(return_list, 9)
+    plt.plot(episodes_list, mv_return)
+    plt.xlabel('Episodes')
+    plt.ylabel('Returns')
+    plt.title('Actor-Critic on {}'.format("A2CHH"))
+    plt.show()
