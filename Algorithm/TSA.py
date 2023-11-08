@@ -36,7 +36,7 @@ def TSA(pop, dim, ub, lb, fobj, maxIter, trees=None):
 
     IterCurve = np.zeros(maxIter)
 
-    for t in tqdm(range(maxIter)):
+    for t in range(maxIter):
         for i in range(pop):
             seedNum = np.random.randint(low, high + 1)
             seeds = np.zeros((seedNum, dim))

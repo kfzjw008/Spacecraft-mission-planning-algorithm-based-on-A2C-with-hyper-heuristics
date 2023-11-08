@@ -7,9 +7,10 @@ from Actor_Critic.env.step import step
 def train_on_policy_agent(EmaxIter,pop, dim, ub, lb, fun1, vmax, vmin, maxIter, X, agent, num_episodes):
     #print("open!!!")
     return_list = []
-    for i in range(10):
-        with tqdm(total=int(num_episodes/10), desc='Iteration %d' % i) as pbar:
+    for i in tqdm(range(10), desc='Overall Progress'):
+        for j in range(int(num_episodes / 10)):
             for i_episode in range(int(num_episodes/10)):
+                print("train"+str(i)+" "+str(j)+" "+str(i_episode))
                 episode_return = 0
                 transition_dict = {'states': [], 'actions': [], 'next_states': [], 'rewards': [], 'dones': [], 'Best_fitnesss': []}
                 state = X #生成初始解
@@ -35,8 +36,9 @@ def train_on_policy_agent(EmaxIter,pop, dim, ub, lb, fun1, vmax, vmin, maxIter, 
                         done =True
                 return_list.append(episode_return)
                 agent.update(transition_dict,pop,dim)
-                if (i_episode+1) % 10 == 0:
-                    pbar.set_postfix({'episode': '%d' % (num_episodes/10 * i + i_episode+1), 'return': '%.3f' % np.mean(return_list[-10:])})
-                pbar.update(1)
+               # if (i_episode+1) % 10 == 0:
+                   # pbar.set_postfix({'episode': '%d' % (num_episodes/10 * i + i_episode+1), 'return': #'%.3f' %
+                    # np.mean(return_list[-10:])})
+                #pbar.update(1)
 
     return return_list,transition_dict,state,Best_fitness,Best_Pos
