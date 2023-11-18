@@ -51,5 +51,9 @@ class ActorCritic:
         self.critic_optimizer.zero_grad()
         actor_loss.backward()  # 计算策略网络的梯度
         critic_loss.backward()  # 计算价值网络的梯度
+        # 梯度裁剪
+        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), max_norm=1.0)
+        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
+
         self.actor_optimizer.step()  # 更新策略网络的参数
         self.critic_optimizer.step()  # 更新价值网络的参数
