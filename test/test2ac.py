@@ -2,7 +2,6 @@ import torch
 import matplotlib.pyplot as plt
 import time
 import random
-
 from Actor_Critic.A2C.PolicyNet import PolicyNet
 from Actor_Critic.A2C.ValueNet import ValueNet
 from Actor_Critic.env.step import step
@@ -23,59 +22,81 @@ from utils.pltdraw import plot_city_coordinates, plot_iterations, plot_city_coor
 
 from utils import rl_utils, action_counts
 
-#配置项
-#random.seed(3)
-#np.random.seed(4)
-#torch.manual_seed(0)
-plt.rcParams['font.sans-serif'] = ['SimHei'] # 用来正常显示中文标签SimHei
-plt.rcParams['axes.unicode_minus'] = False   # 解决负号显示问题
-timess=0
+# 配置项
+# random.seed(3)
+# np.random.seed(4)
+# torch.manual_seed(0)
+plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签SimHei
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+timess = 0
 
-#参数设置
-train=0#0为重新训练模式，1为加载后训练，2为测试模式
-pop = 200 #粒子总数
-dim = 30 #数据维度，状态空间维度
-ub = np.ones(dim) * 1 #粒子上界
-lb = np.ones(dim) * -1#粒子下界
-vmax = (ub - lb) * 0.1 #粒子速度最大值，PSO专用
-vmin = -vmax #粒子速度最小值，PSO专用
-maxIter = 5 #算法一次最大迭代次数
-EmaxIter =50 #一轮次内最大的算法迭代次数
-cmin=0 #初始坐标最小值
-cmax=100 #初始坐标最大值
-action_dims =4 #动作空间维度
-actor_lr = 1e-3 # 学习速率，用于更新Actor模型的参数
-critic_lr = 1e-2 # 学习速率，用于更新Critic模型的参数
-num_episodes = 50 # 总的训练轮次（即训练多少个episodes）
-hidden_dim = 120 # 隐藏层的维度，影响模型的复杂度和表达能力
-gamma = 0.98 # 折扣因子，用于计算奖励的折现值，影响智能体对未来奖励的考虑程度
+# 参数设置
+randomD = 1  # 指定坐标与否，0为指定，1为随机
+train = 0  # 0为重新训练模式，1为加载后训练，2为测试模式
+pop = 200  # 粒子总数
+dim = 30  # 数据维度，状态空间维度
+distance = 3  # 参数维度，可以理解为是任务级别指令的参数值+1
+ub = np.ones(dim) * 1  # 粒子上界
+lb = np.ones(dim) * -1  # 粒子下界
+vmax = (ub - lb) * 0.1  # 粒子速度最大值，PSO专用
+vmin = -vmax  # 粒子速度最小值，PSO专用
+maxIter = 5  # 算法一次最大迭代次数
+EmaxIter = 50  # 一轮次内最大的算法迭代次数
+cmin = 0  # 初始坐标最小值
+cmax = 100  # 初始坐标最大值
+action_dims = 4  # 动作空间维度
+actor_lr = 5e-5  # 学习速率，用于更新Actor模型的参数
+critic_lr = 1e-6  # 学习速率，用于更新Critic模型的参数
+num_episodes = 500  # 总的训练轮次（即从头到尾收敛次数，训练多少个episodes）
+hidden_dim = 120  # 隐藏层的维度，影响模型的复杂度和表达能力
+gamma = 0.98  # 折扣因子，用于计算奖励的折现值，影响智能体对未来奖励的考虑程度
+epsilon=0.2 #初始随机探索率
 policy_net_path = '../Actor_Critic/Net/policy_net.pth'
 value_net_path = '../Actor_Critic/Net/value_net.pth'
 from Actor_Critic.A2C.AC import ActorCritic
+
 if torch.cuda.is_available():
     device = torch.device("cuda")
     print("PyTorch is using GPU!")
 else:
     device = torch.device("cpu")
     print("PyTorch is using CPU.")
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device( "cpu")
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-#env_name = 'CartPole-v0'
-#env = gym.make(env_name)
-#env.seed(0)
+# env_name = 'CartPole-v0'
+# env = gym.make(env_name)
+# env.seed(0)
+# 函数设置
+if randomD == 1:
+    city_coordinates = generate_tsp_coordinates(dim, cmin, cmax)
+if randomD == 0:
+    city_coordinates = [(23.796462709189136, 54.42292252959518), (36.99551665480792, 60.39200385961945),
+                        (62.572030410805404, 6.552885923981311), (1.3167991554874137, 83.746908209646),
+                        (25.935401432800763, 23.433096104669637), (99.56448355104628, 47.026350752244795),
+                        (83.64614512743887, 47.635320869933494), (63.906814054416195, 15.061642402352394),
+                        (63.486065828518846, 86.80453071432967), (52.31812103833013, 74.12518562014903),
+                        (67.14114753695925, 6.403143822699731), (75.82302462868174, 59.10995829313176),
+                        (30.126765951571233, 3.1011751469749993), (86.55272369789456, 47.27490886654668),
+                        (71.88239240658031, 87.88128002554816), (71.41294836112026, 92.10986675838745),
+                        (39.496340400074395, 80.09087709852282), (44.46210560507606, 93.55867217045211),
+                        (87.88666603380416, 9.745430973087721), (13.59688602006689, 21.698694123313732),
+                        (96.5480138898203, 43.616186662742926), (62.6648290866804, 30.10261984255054),
+                        (50.72429838290595, 38.58662588449025), (35.091048877018004, 58.50741074053635),
+                        (58.425179297019895, 90.4201770847775), (68.19821366349666, 92.8945601200017),
+                        (85.64005663967556, 99.09896448688151), (67.12735421625182, 16.309962197106977),
+                        (86.06375331162683, 96.46329473090614), (90.46959845122366, 56.91075034743235)]
 
-#函数设置
-#city_coordinates = generate_tsp_coordinates(dim, cmin, cmax)
-city_coordinates =[(23.796462709189136, 54.42292252959518), (36.99551665480792, 60.39200385961945), (62.572030410805404, 6.552885923981311), (1.3167991554874137, 83.746908209646), (25.935401432800763, 23.433096104669637), (99.56448355104628, 47.026350752244795), (83.64614512743887, 47.635320869933494), (63.906814054416195, 15.061642402352394), (63.486065828518846, 86.80453071432967), (52.31812103833013, 74.12518562014903), (67.14114753695925, 6.403143822699731), (75.82302462868174, 59.10995829313176), (30.126765951571233, 3.1011751469749993), (86.55272369789456, 47.27490886654668), (71.88239240658031, 87.88128002554816), (71.41294836112026, 92.10986675838745), (39.496340400074395, 80.09087709852282), (44.46210560507606, 93.55867217045211), (87.88666603380416, 9.745430973087721), (13.59688602006689, 21.698694123313732), (96.5480138898203, 43.616186662742926), (62.6648290866804, 30.10261984255054), (50.72429838290595, 38.58662588449025), (35.091048877018004, 58.50741074053635), (58.425179297019895, 90.4201770847775), (68.19821366349666, 92.8945601200017), (85.64005663967556, 99.09896448688151), (67.12735421625182, 16.309962197106977), (86.06375331162683, 96.46329473090614), (90.46959845122366, 56.91075034743235)]
 
 def main():
+
+    city_coordinates = generate_tsp_coordinates(dim, cmin, cmax)
     start_time = time.time()
-    state_dim = (dim, pop)
+    # state_dim = (dim, pop)
+    state_dim = (dim, pop, distance)
     action_dim = action_dims
     # 生成初始解
     X = initialization(pop, ub, lb, dim)
     # 生成初始坐标
-
 
     if train == 0:
         delete_model_files(policy_net_path, value_net_path)
@@ -112,44 +133,62 @@ def main():
         transition_dict = {'states': [], 'actions': [], 'next_states': [], 'rewards': [], 'dones': [],
                            'Best_fitnesss': []}
         X = initialization(pop, ub, lb, dim)
-        Best_Pos=X
+        Best_Pos = X
         # 将X从NumPy数组转换为PyTorch张量
+        first_row = X
+        city_coordinates = np.array(city_coordinates)
+        specific_column = city_coordinates[:, 1]
+        second_row = np.tile(specific_column, (pop, 1))
+        specific_column2 = city_coordinates[:, 0]
+        second_row2 = np.tile(specific_column2, (pop, 1))
+        X_reshaped = X.reshape(1, -1)
+        states = np.array([first_row, second_row, second_row2])
 
-        for _ in range(200):
-            X_tensor = torch.from_numpy(X).float().unsqueeze(0).to(device)
+        for i in range(200):
+            print(i)
+            X_tensor = torch.from_numpy(states).float().unsqueeze(0).to(device)
             with torch.no_grad():
                 # 通过模型获取动作
                 outputs = loaded_policy_net(X_tensor)
                 action_probabilities = outputs.data  # 获取网络输出的数据
 
-                action = torch.argmax(action_probabilities, dim=1) # 选择概率最大的动作
-                print(action)
-        next_state, reward, done, Best_fitness, Best_Pos, _ = step(action.item(), pop, dim, ub, lb, fun1, vmax, vmin,
-                                                                   maxIter, X)
-        transition_dict['states'].append(X)
-        transition_dict['actions'].append(action)
-        transition_dict['next_states'].append(next_state)
-        transition_dict['rewards'].append(reward)
-        transition_dict['dones'].append(done)
-        transition_dict['Best_fitnesss'].append(Best_fitness)
-        X = next_state
+                action = torch.argmax(action_probabilities, dim=1)  # 选择概率最大的动作
+               # print(action)
+            next_state, reward, done, Best_fitness, Best_Pos, _ = step(action.item(), pop, dim, ub, lb, fun1, vmax, vmin,
+                                                                   maxIter, X,states)
+            transition_dict['states'].append(X)
+            transition_dict['actions'].append(action)
+            transition_dict['next_states'].append(next_state)
+            transition_dict['rewards'].append(reward)
+            transition_dict['dones'].append(done)
+            transition_dict['Best_fitnesss'].append(Best_fitness)
+            states = next_state
+            YBest_Pos = np.argsort(Best_Pos)
+            print("最优位置:", Best_Pos)
+            print("最优路径:", YBest_Pos)
+            print("最优适应度值:", Best_fitness)
+            #print("用时:", elapsed_time)
+            #print("实际算法用时：", elapsed_time - timess)
+            #print("算法时间占比：", (elapsed_time - timess) / (elapsed_time))
+
     end_time = time.time()
     elapsed_time = end_time - start_time
-
-
 
     if train == 0 or train == 1:
         # 算法调用
 
-
         agent = ActorCritic(state_dim, hidden_dim, action_dim, actor_lr, critic_lr, gamma, device)
-    if  train == 1:
+    if train == 1:
         agent.actor = loaded_policy_net
         agent.critic = loaded_value_net
 
     if train == 0 or train == 1:
         start_time = time.time()
-        return_list, transition_dict, state, Best_fitness, Best_Pos = train_on_policy_agent(EmaxIter, pop, dim, ub, lb,fun1, vmax, vmin, maxIter,X, agent, num_episodes)
+        return_list, transition_dict, state, Best_fitness, Best_Pos = train_on_policy_agent(EmaxIter, pop, dim, ub,
+                                                                                            lb, fun1, vmax, vmin,
+                                                                                            maxIter, X, agent,
+                                                                                            num_episodes,
+                                                                                            city_coordinates,epsilon)
 
         end_time = time.time()
         elapsed_time = end_time - start_time
@@ -169,15 +208,15 @@ def main():
     print("算法时间占比：", (elapsed_time - timess) / (elapsed_time))
     # 动作统计
 
-    #action_counts.action_counts(transition_dict, action_counts)
-
+    # action_counts.action_counts(transition_dict, action_counts)
 
     # 画图
-    if train == 0 or train == 1:
+    if (train == 0 or train == 1) and num_episodes>10:
         plta2c(return_list)
     # plot_iterations(IterCurve)
     plot_city_coordinates(city_coordinates)
-    plot_city_coordinates_line(city_coordinates, YBest_Pos)
+    city_coordinates_array = np.array(city_coordinates)
+    plot_city_coordinates_line(city_coordinates_array, YBest_Pos)
 
 
 def fun1(x):
@@ -191,9 +230,11 @@ def fun1(x):
     end_time = time.time()
 
     elapsed_time = end_time - start_time
-    timess=timess+elapsed_time
+    timess = timess + elapsed_time
     return total_distance
-   # return x[0]**2 + x[1]**2
+
+
+# return x[0]**2 + x[1]**2
 
 if __name__ == "__main__":
     main()

@@ -1,8 +1,13 @@
+import random
+
+import numpy as np
 import torch
 import torch.nn.functional as F
+from torch.optim.lr_scheduler import ExponentialLR
 
 from Actor_Critic.A2C.PolicyNet import PolicyNet
 from Actor_Critic.A2C.ValueNet import ValueNet
+#from test.test2ac import action_dims
 
 
 class ActorCritic:
@@ -16,19 +21,31 @@ class ActorCritic:
                                                 lr=actor_lr)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(),
                                                  lr=critic_lr)  # 价值网络优化器
+        self.actor_scheduler = ExponentialLR(self.actor_optimizer, gamma=0.9)
+        self.critic_scheduler = ExponentialLR(self.critic_optimizer, gamma=0.9)
         self.gamma = gamma
         self.device = device
 
-    def take_action(self, state):
-        state = torch.tensor([state], dtype=torch.float).to(self.device)
-        probs = self.actor(state)
-        action_dist = torch.distributions.Categorical(probs)
-        action = action_dist.sample()
-        return action.item()
+    def take_action(self, states, epsilon):
+        states = torch.tensor([states], dtype=torch.float).to(self.device)
+        probs = self.actor(states)
+        if random.random() < epsilon:
+            # 随机探索
+            action = np.random.choice(4)  # 假设 self.num_actions 是动作的数量
+        else:
+            # 利用
 
-    def update(self, transition_dict,pop,dim):
-        states = torch.tensor(transition_dict['states'],
-                              dtype=torch.float).to(self.device)
+            probs = probs.cpu().detach().numpy().squeeze()  # 转移到 CPU，转换为 NumPy 数组，压缩维度
+            formatted_probs = [f"{prob:.4f}" for prob in probs]  # 格式化输出，保留小数点后四位
+            print(formatted_probs)
+            #print(probs)
+            action_dist = torch.distributions.Categorical(torch.tensor(probs))
+            action = action_dist.sample().item()
+        return action,probs
+
+    def update(self, transition_dict, pop, dim):
+        statess = torch.tensor(transition_dict['statess'],
+                               dtype=torch.float).to(self.device)
         actions = torch.tensor(transition_dict['actions']).view(-1, 1).to(
             self.device)
         rewards = torch.tensor(transition_dict['rewards'],
@@ -39,14 +56,14 @@ class ActorCritic:
                              dtype=torch.float).view(-1, 1).to(self.device)
 
         # 时序差分目标
-        td_target = rewards + self.gamma * self.critic(next_states,pop,dim) * (1 -
+        td_target = rewards + self.gamma * self.critic(next_states) * (1 -
                                                                        dones)
-        td_delta = td_target - self.critic(states,pop,dim)  # 时序差分误差
-        log_probs = torch.log(self.actor(states).gather(1, actions))
+        td_delta = td_target - self.critic(statess)  # 时序差分误差
+        log_probs = torch.log(self.actor(statess).gather(1, actions))
         actor_loss = torch.mean(-log_probs * td_delta.detach())
         # 均方误差损失函数
         critic_loss = torch.mean(
-            F.mse_loss(self.critic(states,pop,dim), td_target.detach()))
+            F.mse_loss(self.critic(statess), td_target.detach()))
         self.actor_optimizer.zero_grad()
         self.critic_optimizer.zero_grad()
         actor_loss.backward()  # 计算策略网络的梯度
