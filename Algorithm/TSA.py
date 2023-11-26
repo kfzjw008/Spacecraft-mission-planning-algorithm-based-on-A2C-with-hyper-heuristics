@@ -83,7 +83,7 @@ def TSA(pop, dim, ub, lb, fobj, maxIter, trees=None):
 
         IterCurve[t] = gBestFitness
 
-    return trees,gBest, gBestFitness, IterCurve, trees
+    return trees,gBest, gBestFitness, IterCurve
 
 
 

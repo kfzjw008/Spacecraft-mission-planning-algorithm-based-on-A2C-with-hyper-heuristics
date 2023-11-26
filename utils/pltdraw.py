@@ -65,3 +65,21 @@ def plta2c(return_list):
     plt.ylabel('Returns')
     plt.title('Actor-Critic on {}'.format("A2CHH"))
     plt.show()
+
+def loss(actor_critic):
+    # 绘制价值损失曲线
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(actor_critic.value_losses)
+    plt.title("Value Loss Over Time")
+    plt.xlabel("Iteration")
+    plt.ylabel("Value Loss")
+
+    # 绘制TD误差曲线
+    plt.subplot(1, 2, 2)
+    plt.plot(actor_critic.td_errors)
+    plt.title("TD Error Over Time")
+    plt.xlabel("Iteration")
+    plt.ylabel("TD Error")
+
+    plt.show()

@@ -23,7 +23,7 @@ def step(action, pop, dim, ub, lb, fun1, vmax, vmin, maxIter, Best_Pos, states):
         reward = -Best_fitness
     # 假设动作为3，选择执行TSA
     elif action == 3:
-        X, Best_Pos, Best_fitness, IterCurve, trees = TSA(pop, dim, ub, lb, fun1, maxIter, states[0])
+        X, Best_Pos, Best_fitness, IterCurve = GWO(pop, dim, ub, lb, fun1, maxIter, states[0])
         reward = -Best_fitness
     else:
         print("action:"+str(action))
@@ -32,6 +32,8 @@ def step(action, pop, dim, ub, lb, fun1, vmax, vmin, maxIter, Best_Pos, states):
     # 假设下一个状态为随机生成的状态
     next_state = states  # 根据实际情况生成下一个状态
     next_state[0] = X
+
+
 
     # 假设每次都没有终止
     done = False

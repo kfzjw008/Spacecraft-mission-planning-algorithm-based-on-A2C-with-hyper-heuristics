@@ -1,18 +1,31 @@
+import time
+from math import inf
+
 import numpy as np
+from tensorboardX import SummaryWriter
 from tqdm import tqdm, _tqdm
 
 from Actor_Critic.env.step import step
+from utils.TSPGenerate import generate_tsp_coordinates
+#from test.test1 import YBest_Pos
+#from test.test2ac import train
+from utils.pltdraw import plot_city_coordinates_line
 
 
 def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter, X, agent, num_episodes,
                           city_coordinates, epsilon):
+    global current_time
+    writer = SummaryWriter('../runs')
+
     # print("open!!!")
     return_list = []
+    minfitness = inf
     with tqdm(total=num_episodes) as pbar:
         for i in range(num_episodes):
             # ... do some work ...
             # print("train" + " " + str(i_episode))
             episode_return = 0
+            city_coordinates = generate_tsp_coordinates(dim, 0, 100)
             transition_dict = {'statess': [], 'actions': [], 'next_states': [], 'rewards': [], 'dones': [],
                                'Best_fitnesss': []}
             state = X  # 生成初始解
@@ -36,21 +49,30 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
                 probs_history.append(probs)
                 oldreward = reward
                 #print(action)
+                #states = np.argsort(states)
                 next_state, reward, done, Best_fitness, Best_Pos, _ = step(action, pop, dim, ub, lb, fun1, vmax, vmin,
                                                                            maxIter, state, states)
+
                 # print(iter)
-                transition_dict['statess'].append(states)
+                transition_dict['statess'].append(states.copy())
                 transition_dict['actions'].append(action)
-                transition_dict['next_states'].append(next_state)
-                transition_dict['rewards'].append(reward)
+                transition_dict['next_states'].append(next_state.copy())
+                if iter==1:
+                    transition_dict['rewards'].append(0)
+                else:
+                    transition_dict['rewards'].append(reward - oldreward)
                 transition_dict['dones'].append(done)
                 transition_dict['Best_fitnesss'].append(Best_fitness)
 
                 states = next_state
-                episode_return = reward - oldreward
+                episode_return =episode_return+ reward - oldreward #总奖励
                 if iter >= (EmaxIter / maxIter):
                     done = True
-            return_list.append(episode_return)
+                return_list.append(episode_return)
+            # 记录每个episode的累计奖励和最佳适应度
+            writer.add_scalar('Reward', reward - oldreward, i)
+            writer.add_scalar('Best Fitness', Best_fitness, i)
+            #writer.add_scalar('Prob', probs, i)
             agent.update(transition_dict, pop, dim)
             # if (i_episode+1) % 10 == 0:
             # pbar.set_postfix({'episode': '%d' % (num_episodes/10 * i + i_episode+1), 'return': #'%.3f' %
@@ -61,8 +83,10 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
             # 更新学习率
             agent.actor_scheduler.step()
             agent.critic_scheduler.step()
-            '''
+    writer.close()
+    '''
             # 将 probs_history 转换为 NumPy 数组以便于处理
+           
 probs_history = np.array(probs_history)
 
 # 绘制每个动作概率的变化
