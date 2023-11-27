@@ -25,7 +25,7 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
             # ... do some work ...
             # print("train" + " " + str(i_episode))
             episode_return = 0
-            city_coordinates = generate_tsp_coordinates(dim, 0, 100)
+           # city_coordinates = generate_tsp_coordinates(dim, 0, 100)
             transition_dict = {'statess': [], 'actions': [], 'next_states': [], 'rewards': [], 'dones': [],
                                'Best_fitnesss': []}
             state = X  # 生成初始解
@@ -41,6 +41,7 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
             iter = 0
             oldreward = 0
             reward = 0
+            Best_fitness=0
             probs_history = []
             while not done:
                 iter = iter + 1
@@ -51,7 +52,7 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
                 #print(action)
                 #states = np.argsort(states)
                 next_state, reward, done, Best_fitness, Best_Pos, _ = step(action, pop, dim, ub, lb, fun1, vmax, vmin,
-                                                                           maxIter, state, states)
+                                                                           maxIter, state, states,Best_fitness)
 
                 # print(iter)
                 transition_dict['statess'].append(states.copy())
@@ -60,17 +61,17 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
                 if iter==1:
                     transition_dict['rewards'].append(0)
                 else:
-                    transition_dict['rewards'].append(reward - oldreward)
+                    transition_dict['rewards'].append(reward)
                 transition_dict['dones'].append(done)
                 transition_dict['Best_fitnesss'].append(Best_fitness)
 
                 states = next_state
-                episode_return =episode_return+ reward - oldreward #总奖励
+                episode_return =episode_return+ reward  #总奖励
                 if iter >= (EmaxIter / maxIter):
                     done = True
                 return_list.append(episode_return)
             # 记录每个episode的累计奖励和最佳适应度
-            writer.add_scalar('Reward', reward - oldreward, i)
+            writer.add_scalar('Reward', reward, i)
             writer.add_scalar('Best Fitness', Best_fitness, i)
             #writer.add_scalar('Prob', probs, i)
             agent.update(transition_dict, pop, dim)
@@ -78,7 +79,8 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
             # pbar.set_postfix({'episode': '%d' % (num_episodes/10 * i + i_episode+1), 'return': #'%.3f' %
             # np.mean(return_list[-10:])})
             # pbar.update(1)
-            pbar.set_postfix(Best_fitnesss='{:.2f}'.format(Best_fitness))
+            #pbar.set_postfix(Best_fitnesss='{:.2f}'.format(Best_fitness))
+            pbar.set_postfix(reward='{:2f}'.format(episode_return))
             pbar.update(1)
             # 更新学习率
             agent.actor_scheduler.step()

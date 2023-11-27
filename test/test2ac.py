@@ -44,15 +44,15 @@ lb = np.ones(dim) * -1  # 粒子下界
 vmax = (ub - lb) * 0.1  # 粒子速度最大值，PSO专用
 vmin = -vmax  # 粒子速度最小值，PSO专用
 maxIter = 5  # 算法一次最大迭代次数
-EmaxIter = 50  # 一轮次内最大的算法迭代次数
+EmaxIter = 500  # 一轮次内最大的算法迭代次数
 cmin = 0  # 初始坐标最小值
 cmax = 100  # 初始坐标最大值
 action_dims = 4  # 动作空间维度
 actor_lr = 5e-4 # 学习速率，用于更新Actor模型的参数
-critic_lr = 1e-60  # 学习速率，用于更新Critic模型的参数
-num_episodes = 50000  # 总的训练轮次（即从头到尾收敛次数，训练多少个episodes）
+critic_lr = 1e-3  # 学习速率，用于更新Critic模型的参数
+num_episodes = 5000  # 总的训练轮次（即从头到尾收敛次数，训练多少个episodes）
 hidden_dim = 120  # 隐藏层的维度，影响模型的复杂度和表达能力
-gamma = 0.98  # 折扣因子，用于计算奖励的折现值，影响智能体对未来奖励的考虑程度
+gamma = 0.95  # 折扣因子，用于计算奖励的折现值，影响智能体对未来奖励的考虑程度
 epsilon=0.2 #初始随机探索率
 policy_net_path = '../Actor_Critic/Net/policy_net.pth'
 value_net_path = '../Actor_Critic/Net/value_net.pth'
@@ -108,7 +108,7 @@ def main():
                         (86.06375331162683, 96.46329473090614), (90.46959845122366, 56.91075034743235)]
 
     global nYBest_Pos, minfitness
-    #city_coordinates = generate_tsp_coordinates(dim, cmin, cmax)
+   # city_coordinates = generate_tsp_coordinates(dim, cmin, cmax)
     start_time = time.time()
     # state_dim = (dim, pop)
     state_dim = (dim, pop, distance)

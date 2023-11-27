@@ -6,7 +6,7 @@ from Algorithm.SCA import SCA
 from Algorithm.TSA import TSA
 
 
-def step(action, pop, dim, ub, lb, fun1, vmax, vmin, maxIter, Best_Pos, states):
+def step(action, pop, dim, ub, lb, fun1, vmax, vmin, maxIter, Best_Pos, states,Best_fitnesss):
     # 在这里根据传入的动作执行相应的函数，并计算奖励
 
     # 假设动作为0，选择执行PSO
@@ -37,5 +37,11 @@ def step(action, pop, dim, ub, lb, fun1, vmax, vmin, maxIter, Best_Pos, states):
 
     # 假设每次都没有终止
     done = False
+    if (Best_fitness == Best_fitnesss) or Best_fitnesss ==0:
+        reward=0
+    elif Best_fitness > Best_fitnesss:
+        reward=-1
+    else:
+        reward=1
 
     return next_state, reward, done, Best_fitness, Best_Pos, {}
