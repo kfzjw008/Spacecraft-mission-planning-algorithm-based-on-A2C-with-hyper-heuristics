@@ -26,7 +26,7 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
             # print("train" + " " + str(i_episode))
             episode_return = 0
            # city_coordinates = generate_tsp_coordinates(dim, 0, 100)
-            transition_dict = {'statess': [], 'actions': [], 'next_states': [], 'rewards': [], 'dones': [],
+            transition_dict = {'statess': [], 'actions': [], 'next_states': [], 'rewards': [],'cost': [], 'dones': [],
                                'Best_fitnesss': []}
             state = X  # 生成初始解
             first_row = X
@@ -41,8 +41,10 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
             iter = 0
             oldreward = 0
             reward = 0
-            Best_fitness=0
+
             probs_history = []
+            fitness = np.min(np.array([fun1(pos) for pos in states[0]]))
+            Best_fitness =fitness
             while not done:
                 iter = iter + 1
                 # print(state.shape)
@@ -57,6 +59,7 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
                 # print(iter)
                 transition_dict['statess'].append(states.copy())
                 transition_dict['actions'].append(action)
+                transition_dict['cost'].append(fitness-Best_fitness)
                 transition_dict['next_states'].append(next_state.copy())
                 if iter==1:
                     transition_dict['rewards'].append(0)
