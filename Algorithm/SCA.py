@@ -31,6 +31,7 @@ def SCA(pop, dim, ub, lb, fobj, maxIter, X=None):
     gBestFitness = fitness[sorted_fitness[0]]
 
     IterCurve = np.zeros(maxIter)
+    timeE =0
 
     for t in range(maxIter):
         r1 = a - t * (a / maxIter)
@@ -53,11 +54,12 @@ def SCA(pop, dim, ub, lb, fobj, maxIter, X=None):
         if fitness[sorted_fitness[0]] < gBestFitness:
             gBestFitness = fitness[sorted_fitness[0]]
             gBest = X[sorted_fitness[0]].copy()
+            timeE = t
 
         IterCurve[t] = gBestFitness
 
     Best_Pos = gBest
     Best_fitness = gBestFitness
 
-    return X,Best_Pos, Best_fitness, IterCurve
+    return timeE,X,Best_Pos, Best_fitness, IterCurve
 

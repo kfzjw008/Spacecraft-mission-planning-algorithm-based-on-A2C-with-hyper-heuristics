@@ -44,7 +44,7 @@ def PSO(pop, dim, ub, lb, fobj, vmax, vmin, maxIter, X=None, V=None):
     fitnessNew = fitness.copy()
 
     IterCurve = np.zeros(maxIter)
-
+    timeE = 0
     for t in range(maxIter):
         for i in range(pop):
             r1 = np.random.rand(dim)
@@ -61,6 +61,7 @@ def PSO(pop, dim, ub, lb, fobj, vmax, vmin, maxIter, X=None, V=None):
 
                 if fitnessNew[i] < gBestFitness:
                     gBestFitness = fitnessNew[i]
+                    timeE=t
                     gBest = Xnew[i].copy()
 
         X = Xnew.copy()
@@ -70,6 +71,6 @@ def PSO(pop, dim, ub, lb, fobj, vmax, vmin, maxIter, X=None, V=None):
         Best_fitness = gBestFitness
         IterCurve[t] = gBestFitness
 
-    return X,Best_Pos, Best_fitness, IterCurve
+    return timeE,X,Best_Pos, Best_fitness, IterCurve
 
 

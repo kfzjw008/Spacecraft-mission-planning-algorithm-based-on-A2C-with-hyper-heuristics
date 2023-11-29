@@ -8,7 +8,7 @@ from Actor_Critic.A2C.PolicyNet import PolicyNet
 from Actor_Critic.A2C.ValueNet import ValueNet
 from Actor_Critic.env.step import step
 from Actor_Critic.train import train_on_policy_agent
-#from Actor_Critic.train import train_on_policy_agent
+# from Actor_Critic.train import train_on_policy_agent
 from Algorithm.GWO import GWO
 from Algorithm.PSO import PSO
 from Algorithm.SCA import SCA
@@ -48,16 +48,21 @@ EmaxIter = 500  # 一轮次内最大的算法迭代次数
 cmin = 0  # 初始坐标最小值
 cmax = 100  # 初始坐标最大值
 action_dims = 4  # 动作空间维度
-actor_lr = 5e-4 # 学习速率，用于更新Actor模型的参数
+actor_lr = 2e-4# 学习速率，用于更新Actor模型的参数
 critic_lr = 3e-3  # 学习速率，用于更新Critic模型的参数
-num_episodes = 5000  # 总的训练轮次（即从头到尾收敛次数，训练多少个episodes）
+num_episodes = 1000  # 总的训练轮次（即从头到尾收敛次数，训练多少个episodes）
 hidden_dim = 120  # 隐藏层的维度，影响模型的复杂度和表达能力
 gamma = 0.95  # 折扣因子，用于计算奖励的折现值，影响智能体对未来奖励的考虑程度
-epsilon=0.2 #初始随机探索率
+entropy_beta=0.05
+# 在训练循环中动态调整ε
+epsilon_start = 1.5
+epsilon_end = 0.01
+epsilon_decay = 500
 policy_net_path = '../Actor_Critic/Net/policy_net.pth'
 value_net_path = '../Actor_Critic/Net/value_net.pth'
 from Actor_Critic.A2C.AC import ActorCritic
-#global current_time = time.strftime("%Y%m%d-%H%M%S")
+
+# global current_time = time.strftime("%Y%m%d-%H%M%S")
 if torch.cuda.is_available():
     device = torch.device("cuda")
     print("PyTorch is using GPU!")
@@ -108,14 +113,14 @@ def main():
                         (86.06375331162683, 96.46329473090614), (90.46959845122366, 56.91075034743235)]
 
     global nYBest_Pos, minfitness
-   # city_coordinates = generate_tsp_coordinates(dim, cmin, cmax)
+    city_coordinates = generate_tsp_coordinates(dim, cmin, cmax)
     start_time = time.time()
     # state_dim = (dim, pop)
     state_dim = (dim, pop, distance)
     action_dim = action_dims
     # 生成初始解
     X = initialization(pop, ub, lb, dim)
-    #X = np.argsort(X)
+    # X = np.argsort(X)
     # 生成初始坐标
 
     if train == 0:
@@ -163,9 +168,9 @@ def main():
         second_row2 = np.tile(specific_column2, (pop, 1))
         X_reshaped = X.reshape(1, -1)
         states = np.array([first_row, second_row, second_row2])
-        minfitness=inf
+        minfitness = inf
 
-        for i in range(500):
+        for i in range(1000):
             print(i)
             X_tensor = torch.from_numpy(states).float().unsqueeze(0).to(device)
             with torch.no_grad():
@@ -173,14 +178,17 @@ def main():
                 outputs = loaded_policy_net(X_tensor)
                 action_probabilities = outputs.data  # 获取网络输出的数据
 
-                #action = torch.argmax(action_probabilities, dim=1)  # 选择概率最大的动作
+                # action = torch.argmax(action_probabilities, dim=1)  # 选择概率最大的动作
                 m = torch.distributions.Categorical(action_probabilities)  # 创建一个分类分布
                 # 输出采样分布的概率
                 print("采样分布的概率:", m.probs)
                 action = m.sample()  # 从这个分布中采样一个动作
                 print(action)
-            next_state, reward, done, Best_fitness, Best_Pos, _ = step(action.item(), pop, dim, ub, lb, fun1, vmax, vmin,
-                                                                   1, X,states)
+                fitness = np.min(np.array([fun1(pos) for pos in states[0]]))
+                Best_fitness = fitness
+            timesss, next_state, reward, done, Best_fitness, Best_Pos, _ = step(action.item(), pop, dim, ub, lb, fun1,
+                                                                             vmax, vmin,
+                                                                             1, X, states, Best_fitness)
             transition_dict['states'].append(X)
             transition_dict['actions'].append(action)
             transition_dict['next_states'].append(next_state)
@@ -189,20 +197,20 @@ def main():
             transition_dict['Best_fitnesss'].append(Best_fitness)
             states = next_state
             YBest_Pos = np.argsort(Best_Pos)
-            #print("最优位置:", Best_Pos)
-            #print("最优路径:", YBest_Pos)
-            #print("最优适应度值:", Best_fitness)
-            if minfitness>Best_fitness:
-                mbestpos=Best_Pos
-                minfitness=Best_fitness
-                nYBest_Pos=YBest_Pos
+            # print("最优位置:", Best_Pos)
+            # print("最优路径:", YBest_Pos)
+            # print("最优适应度值:", Best_fitness)
+            if minfitness > Best_fitness:
+                mbestpos = Best_Pos
+                minfitness = Best_fitness
+                nYBest_Pos = YBest_Pos
                 print("最优适应度值:", minfitness)
                 city_coordinates_array = np.array(city_coordinates)
                 plot_city_coordinates_line(city_coordinates_array, nYBest_Pos)
 
-            #print("用时:", elapsed_time)
-            #print("实际算法用时：", elapsed_time - timess)
-            #print("算法时间占比：", (elapsed_time - timess) / (elapsed_time))
+            # print("用时:", elapsed_time)
+            # print("实际算法用时：", elapsed_time - timess)
+            # print("算法时间占比：", (elapsed_time - timess) / (elapsed_time))
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -210,7 +218,9 @@ def main():
     if train == 0 or train == 1:
         # 算法调用
 
-        agent = ActorCritic(state_dim, hidden_dim, action_dim, actor_lr, critic_lr, gamma, device)
+        agent = ActorCritic(state_dim, hidden_dim, action_dim, actor_lr, critic_lr, gamma, device,entropy_beta,
+                            epsilon_start,
+                            epsilon_end,epsilon_decay )
     if train == 1:
         agent.actor = loaded_policy_net
         agent.critic = loaded_value_net
@@ -221,7 +231,7 @@ def main():
                                                                                             lb, fun1, vmax, vmin,
                                                                                             maxIter, X, agent,
                                                                                             num_episodes,
-                                                                                            city_coordinates,epsilon)
+                                                                                            city_coordinates)
 
         end_time = time.time()
         elapsed_time = end_time - start_time
@@ -230,7 +240,7 @@ def main():
     if train == 0 or train == 1:
         torch.save(agent.actor.state_dict(), policy_net_path)
         torch.save(agent.critic.state_dict(), value_net_path)
-    # 结果输出
+        # 结果输出
 
         YBest_Pos = np.argsort(Best_Pos)
         print("最优位置:", Best_Pos)
@@ -244,13 +254,13 @@ def main():
     # action_counts.action_counts(transition_dict, action_counts)
 
     # 画图
-    if (train == 0 or train == 1) and num_episodes>10:
+    if (train == 0 or train == 1) and num_episodes > 10:
         plta2c(return_list)
     # plot_iterations(IterCurve)
     plot_city_coordinates(city_coordinates)
     city_coordinates_array = np.array(city_coordinates)
 
-    if train==2:
+    if train == 2:
         print("最优位置:", mbestpos)
         print("最优路径:", nYBest_Pos)
         print("最优适应度值:", minfitness)

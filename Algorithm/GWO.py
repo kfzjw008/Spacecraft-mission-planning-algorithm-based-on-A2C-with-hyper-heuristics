@@ -50,7 +50,7 @@ def GWO(pop, dim, ub, lb, fobj, maxIter, Positions=None):
     gBestFitness = Alpha_score
 
     IterCurve = np.zeros(maxIter)
-
+    timeE = 0
     for t in range(maxIter):
         a = 2 - t * (2 / maxIter)
 
@@ -89,6 +89,7 @@ def GWO(pop, dim, ub, lb, fobj, maxIter, Positions=None):
         sorted_fitness = np.argsort(fitness)
         if fitness[sorted_fitness[0]] < Alpha_score:
             Alpha_score = fitness[sorted_fitness[0]]
+            timeE = t
             Alpha_pos = Positions[sorted_fitness[0]].copy()
 
         if fitness[sorted_fitness[1]] < Beta_score:
@@ -107,5 +108,6 @@ def GWO(pop, dim, ub, lb, fobj, maxIter, Positions=None):
     Best_Pos = gBest
     Best_fitness = gBestFitness
 
-    return Positions,Best_Pos, Best_fitness, IterCurve
+
+    return timeE,Positions,Best_Pos, Best_fitness, IterCurve
 

@@ -34,7 +34,7 @@ def TSA(pop, dim, ub, lb, fobj, maxIter, trees=None):
     indexSort = np.argsort(fitness)
     gBest = trees[indexSort[0]].copy()
     gBestFitness = SortFitness[0]
-
+    timeE = 0
     IterCurve = np.zeros(maxIter)
 
     for t in range(maxIter):
@@ -81,10 +81,11 @@ def TSA(pop, dim, ub, lb, fobj, maxIter, trees=None):
         if min_tree < gBestFitness:
             gBestFitness = min_tree
             gBest = trees[min_tree_index].copy()
+            timeE = t
 
         IterCurve[t] = gBestFitness
 
-    return trees,gBest, gBestFitness, IterCurve
+    return timeE,trees,gBest, gBestFitness, IterCurve
 
 
 

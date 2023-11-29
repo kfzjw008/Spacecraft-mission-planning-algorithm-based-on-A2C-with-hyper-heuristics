@@ -76,9 +76,9 @@ city_coordinates = [(23.796462709189136, 54.42292252959518), (36.99551665480792,
 
 #算法调用
 start_time = time.time()
-X,Best_Pos, Best_fitness, IterCurve = PSO(pop, dim, ub, lb, fun1, vmax, vmin, maxIter,X)#877
-#X,Best_Pos, Best_fitness, IterCurve = GWO(pop, dim, ub, lb, fun1, maxIter,X)#607
-#X,Best_Pos, Best_fitness, IterCurve = SCA(pop, dim, ub, lb, fun1, maxIter,X)#960
+time,X,Best_Pos, Best_fitness, IterCurve = PSO(pop, dim, ub, lb, fun1, vmax, vmin, maxIter,X)#877
+time,X,Best_Pos, Best_fitness, IterCurve = GWO(pop, dim, ub, lb, fun1, maxIter,X)#607
+time,X,Best_Pos, Best_fitness, IterCurve = SCA(pop, dim, ub, lb, fun1, maxIter,X)#960
 #X,Best_Pos, Best_fitness, IterCurve, trees = TSA(pop, dim, ub, lb, fun1, maxIter,X)
 YBest_Pos = np.argsort(Best_Pos)
 end_time = time.time()

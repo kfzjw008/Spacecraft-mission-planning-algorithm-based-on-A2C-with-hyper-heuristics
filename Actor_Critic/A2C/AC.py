@@ -1,3 +1,4 @@
+import math
 import random
 
 import numpy as np
@@ -14,7 +15,7 @@ from Actor_Critic.A2C.ValueNet import ValueNet
 
 class ActorCritic:
     def __init__(self, state_dim, hidden_dim, action_dim, actor_lr, critic_lr,
-                 gamma, device):
+                 gamma, device,entropy_beta,epsilon_start,epsilon_end,epsilon_decay):
         self.value_losses = []  # 用于存储价值损失
         self.td_errors = []  # 用于存储TD误差
         # 策略网络
@@ -28,26 +29,38 @@ class ActorCritic:
         self.actor_scheduler = ExponentialLR(self.actor_optimizer, gamma=0.9)
         self.critic_scheduler = ExponentialLR(self.critic_optimizer, gamma=0.9)
         self.gamma = gamma
+        self.entropy_beta = entropy_beta  # 熵正则化的系数
         self.device = device
+        self.epsilon_start = epsilon_start
+        self.epsilon_end = epsilon_end
+        self.epsilon_decay = epsilon_decay
+        self.current_episode = 0  # 初始化当前episode数
 
-    def take_action(self, states, epsilon):
+    def take_action(self, states):
         states = torch.tensor([states], dtype=torch.float).to(self.device)
         probs = self.actor(states)
+        epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * math.exp( -1. * self.current_episode / self.epsilon_decay)
         if random.random() < epsilon:
             # 随机探索
             action = np.random.choice(4)  # 假设 self.num_actions 是动作的数量
+            probs = probs.cpu().detach().numpy().squeeze()
+            formatted_probs = [f"{prob:.4f}" for prob in probs]
+            print(formatted_probs,end="")
+            print(action)
         else:
             # 利用
 
             probs = probs.cpu().detach().numpy().squeeze()  # 转移到 CPU，转换为 NumPy 数组，压缩维度
             formatted_probs = [f"{prob:.4f}" for prob in probs]  # 格式化输出，保留小数点后四位
-            #print(formatted_probs)
+            print(formatted_probs, end="")
+
             #print(probs)
             action_dist = torch.distributions.Categorical(torch.tensor(probs))
             action = action_dist.sample().item()
+            print(action)
         return action,probs
 
-    def update(self, transition_dict, pop, dim):
+    def update(self, transition_dict, pop, dim,Gscore):
         writer = SummaryWriter('../runs')
         statess = torch.tensor(transition_dict['statess'],
                                dtype=torch.float).to(self.device)
@@ -61,8 +74,8 @@ class ActorCritic:
                              dtype=torch.float).view(-1, 1).to(self.device)
 
         # 时序差分目标
-        td_target = rewards + self.gamma * self.critic(next_states) * (1 -
-                                                                       dones)
+
+        td_target = rewards + self.gamma * self.critic(next_states) * (1 -dones)+Gscore
         #print(self.critic(statess))
         td_delta = td_target - self.critic(statess)
         #td_target.cpu().detach().numpy()
@@ -70,6 +83,12 @@ class ActorCritic:
         # 时序差分误差
         log_probs = torch.log(self.actor(statess).gather(1, actions))
         actor_loss = torch.mean(-log_probs * td_delta.detach())
+        # 计算熵正则化项
+        probs = self.actor(statess)
+        dist = torch.distributions.Categorical(probs)
+        entropy = dist.entropy().mean()
+        # 将熵加入到策略网络的损失中
+        actor_loss -= self.entropy_beta * entropy
         # 均方误差损失函数
         critic_loss = torch.mean( F.mse_loss(self.critic(statess), td_target.detach()))
         self.actor_optimizer.zero_grad()
@@ -82,6 +101,7 @@ class ActorCritic:
         # 计算价值损失和TD误差
         #critic_loss = torch.mean(F.mse_loss(self.critic(statess), td_target.detach()))
         td_error = (td_target - self.critic(statess)).detach().cpu().numpy()
+        print(np.concatenate((self.critic(statess).cpu().detach().numpy(),td_target.cpu().detach().numpy()),axis=1)[:3])
 
         # 将损失和误差添加到列表中
         self.value_losses.append(critic_loss.item())
