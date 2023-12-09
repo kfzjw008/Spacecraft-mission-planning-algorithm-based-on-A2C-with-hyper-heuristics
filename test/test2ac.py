@@ -1,3 +1,4 @@
+import datetime
 from math import inf
 
 import torch
@@ -35,7 +36,7 @@ timess = 0
 
 # 参数设置
 randomD = 0  # 指定坐标与否，0为指定，1为随机
-train = 2  # 0为重新训练模式，1为加载后训练，2为测试模式
+train = 0  # 0为重新训练模式，1为加载后训练，2为测试模式
 pop = 200  # 粒子总数
 dim = 30  # 数据维度，状态空间维度
 distance = 3  # 参数维度，可以理解为是任务级别指令的参数值+1
@@ -50,7 +51,7 @@ cmax = 100  # 初始坐标最大值
 action_dims = 4  # 动作空间维度
 actor_lr = 2e-4# 学习速率，用于更新Actor模型的参数
 critic_lr = 3e-3  # 学习速率，用于更新Critic模型的参数
-num_episodes = 1000  # 总的训练轮次（即从头到尾收敛次数，训练多少个episodes）
+num_episodes = 8000  # 总的训练轮次（即从头到尾收敛次数，训练多少个episodes）
 hidden_dim = 120  # 隐藏层的维度，影响模型的复杂度和表达能力
 gamma = 0.95  # 折扣因子，用于计算奖励的折现值，影响智能体对未来奖励的考虑程度
 entropy_beta=0.05
@@ -206,7 +207,7 @@ def main(city_coordinates):
                                                                                             lb, fun1, vmax, vmin,
                                                                                             maxIter, X, agent,
                                                                                             num_episodes,
-                                                                                            city_coordinates)
+                                                                                            city_coordinates,file)
 
         end_time = time.time()
         elapsed_time = end_time - start_time
@@ -274,6 +275,12 @@ def fun1(x):
 if __name__ == "__main__":
     city_coordinates = generate_tsp_coordinates(dim, cmin, cmax)
     print(city_coordinates)
+    # 获取当前时间
+    current_time = datetime.datetime.now()
+    formatted_time = current_time.strftime("%Y-%m-%d_%H-%M-%S")
+    file_name = f'{formatted_time}'
+    file_name=file_name+"_"+str(pop)+"_"+str(dim)+"_"+str(
+        maxIter)+"_"+str(EmaxIter)+"_"+str(num_episodes)+".txt"
 
-    with open('output.txt', 'w') as file:
+    with open("../log/"+file_name, 'a') as file:
         main(city_coordinates)

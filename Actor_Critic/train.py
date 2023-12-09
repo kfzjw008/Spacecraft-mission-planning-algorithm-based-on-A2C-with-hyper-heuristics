@@ -14,10 +14,13 @@ from utils.compare_numbers import compare_numbers, calculate_difference
 # from test.test1 import YBest_Pos
 # from test.test2ac import train
 from utils.pltdraw import plot_city_coordinates_line
+import datetime
+
 
 
 def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter, X, agent, num_episodes,
-                          city_coordinates):
+                          city_coordinates,file):
+
     global current_time
     writer = SummaryWriter('../runs')
 
@@ -53,17 +56,25 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
             # 新设计：在进行强化学习算法之前，先跑一下四个自行算法，获得相应的最优解，强化学习需要比这里的解跑的好，跑的快。
             time1, X1, Best_Pos1, Best_fitness1, IterCurve1 = PSO(pop, dim, ub, lb, fun1, vmax, vmin, EmaxIter,
                                                                   X.copy())  # 877
-            print(" 1 ", end="")
+            file.write(" 1-")
+            print(" 1-", end="")
+            file.write(str(Best_fitness1))
             print(Best_fitness1, end="")
             time2, X2, Best_Pos2, Best_fitness2, IterCurve2 = GWO(pop, dim, ub, lb, fun1, EmaxIter, X.copy())  # 607
-            print(" 2 ", end="")
+            file.write(" 2-")
+            print(" 2-", end="")
+            file.write(str(Best_fitness2))
             print(Best_fitness2, end="")
             time3, X3, Best_Pos3, Best_fitness3, IterCurve3 = SCA(pop, dim, ub, lb, fun1, EmaxIter, X.copy())  # 960
-            print(" 3 ", end="")
+            file.write(" 3-")
+            print(" 3-", end="")
+            file.write(str(Best_fitness3))
             print(Best_fitness3, end="")
             time4, X4, Best_Pos4, Best_fitness4, IterCurve4 = GWO(pop, dim, ub, lb, fun1, EmaxIter, X.copy())  # 607
-            print(" 4 ", end="")
+            print(" 4-", end="")
+            file.write(" 4-")
             print(Best_fitness4, end="")
+            file.write(str(Best_fitness4))
 
             Best_fitness = fitness
             while not done:
@@ -97,8 +108,10 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
             # 记录每个episode的累计奖励和最佳适应度
             writer.add_scalar('Reward', reward, i)
             writer.add_scalar('Best Fitness', Best_fitness, i)
-            print(" MY ", end="")
+            print(" MY-", end="")
+            file.write(" MY-")
             print(Best_fitness, end="")
+            file.write(str(Best_fitness))
             # 循环结束后计算全局奖励
             Main_Score=compare_numbers(Best_fitness1,Best_fitness2,Best_fitness3,Best_fitness4,Best_fitness)*compare_numbers(Best_fitness1,Best_fitness2,Best_fitness3,Best_fitness4,Best_fitness)*100
             if Main_Score==1600:
@@ -113,11 +126,13 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
                 #定义mainscore如果超过四个算法获得4000分，超过多少值就再给值的10倍分数
 
             global_reward = Main_Score
-            print("G:_ ", end="")
+            print(" G:_-", end="")
+            file.write(" G:_-")
             print(global_reward, end="")
+            file.write(str(global_reward))
 
             # writer.add_scalar('Prob', probs, i)
-            agent.update(transition_dict, pop, dim,global_reward)
+            agent.update(transition_dict, pop, dim,global_reward,file)
             # if (i_episode+1) % 10 == 0:
             # pbar.set_postfix({'episode': '%d' % (num_episodes/10 * i + i_episode+1), 'return': #'%.3f' %
             # np.mean(return_list[-10:])})

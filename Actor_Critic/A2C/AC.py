@@ -45,8 +45,8 @@ class ActorCritic:
             action = np.random.choice(4)  # 假设 self.num_actions 是动作的数量
             probs = probs.cpu().detach().numpy().squeeze()
             formatted_probs = [f"{prob:.4f}" for prob in probs]
-            print(formatted_probs,end="")
-            print(action)
+            #print(formatted_probs,end="")
+            #print(action)
         else:
             # 利用
 
@@ -60,7 +60,7 @@ class ActorCritic:
             print(action)
         return action,probs
 
-    def update(self, transition_dict, pop, dim,Gscore):
+    def update(self, transition_dict, pop, dim,Gscore,file):
         writer = SummaryWriter('../runs')
         statess = torch.tensor(transition_dict['statess'],
                                dtype=torch.float).to(self.device)
@@ -101,13 +101,15 @@ class ActorCritic:
         # 计算价值损失和TD误差
         #critic_loss = torch.mean(F.mse_loss(self.critic(statess), td_target.detach()))
         td_error = (td_target - self.critic(statess)).detach().cpu().numpy()
-        print(np.concatenate((self.critic(statess).cpu().detach().numpy(),td_target.cpu().detach().numpy()),axis=1)[:3])
+        #print(np.concatenate((self.critic(statess).cpu().detach().numpy(),td_target.cpu().detach().numpy()),
+        # axis=1)[:3])
 
         # 将损失和误差添加到列表中
         self.value_losses.append(critic_loss.item())
 
         self.td_errors.append(np.mean(np.abs(td_error)))
-        print("loss=" + str(critic_loss.item()) + " td:" )
+        print(" loss-" + str(critic_loss.item())  )
+        file.write(" loss-" + str(critic_loss.item()) +"\n")
         writer.add_scalar('loss', int(critic_loss.item()))
         writer.close()
 
