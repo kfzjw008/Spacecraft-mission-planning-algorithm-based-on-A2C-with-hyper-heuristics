@@ -52,12 +52,12 @@ class ActorCritic:
 
             probs = probs.cpu().detach().numpy().squeeze()  # 转移到 CPU，转换为 NumPy 数组，压缩维度
             formatted_probs = [f"{prob:.4f}" for prob in probs]  # 格式化输出，保留小数点后四位
-            print(formatted_probs, end="")
+            #print(formatted_probs, end="")
 
             #print(probs)
             action_dist = torch.distributions.Categorical(torch.tensor(probs))
             action = action_dist.sample().item()
-            print(action)
+            #print(action)
         return action,probs
 
     def update(self, transition_dict, pop, dim,Gscore,file):
