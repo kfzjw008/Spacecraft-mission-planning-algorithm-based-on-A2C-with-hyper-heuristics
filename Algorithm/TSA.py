@@ -18,7 +18,7 @@ from utils.initialization import initialization
 %   Best_fitness: 最优位置对应的适应度值
 %   IterCure:  用于记录每次迭代的最佳适应度，即后续用来绘制迭代曲线。
 '''
-def TSA(pop, dim, ub, lb, fobj, maxIter, trees=None):
+def TSA(pop, dim, ub, lb, fobj, maxIter, trees,city_coordinates):
     low = int(0.1 * pop)
     high = int(0.25 * pop)
     ST = 0.1

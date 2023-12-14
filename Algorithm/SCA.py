@@ -18,13 +18,13 @@ from utils.initialization import initialization
 %   Best_fitness: 最优位置对应的适应度值
 %   IterCure:  用于记录每次迭代的最佳适应度，即后续用来绘制迭代曲线。
 '''
-def SCA(pop, dim, ub, lb, fobj, maxIter, X=None):
-    a = 2
+def SCA(pop, dim, ub, lb, fobj, maxIter, X,city_coordinates):
+    a = 0.5
 
     if X is None:
         X = initialization(pop, ub, lb, dim)
 
-    fitness = np.array([fobj(x) for x in X])
+    fitness = np.array([fobj(x,city_coordinates) for x in X])
 
     sorted_fitness = np.argsort(fitness)
     gBest = X[sorted_fitness[0]].copy()
@@ -48,7 +48,7 @@ def SCA(pop, dim, ub, lb, fobj, maxIter, X=None):
 
             X[i] = BoundaryCheck(X[i], ub, lb)
 
-        fitness = np.array([fobj(x) for x in X])
+        fitness = np.array([fobj(x,city_coordinates) for x in X])
 
         sorted_fitness = np.argsort(fitness)
         if fitness[sorted_fitness[0]] < gBestFitness:

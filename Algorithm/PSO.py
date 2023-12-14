@@ -21,17 +21,17 @@ from utils.BoundaryCheck import BoundaryCheck
 %   IterCure:  用于记录每次迭代的最佳适应度，即后续用来绘制迭代曲线。
 '''
 
-def PSO(pop, dim, ub, lb, fobj, vmax, vmin, maxIter, X=None, V=None):
+def PSO(pop, dim, ub, lb, fobj, vmax, vmin, maxIter, X, city_coordinates):
     c1 = 2.0
-    c2 = 2.0
+    c2 = 1.0
 
     if X is None:
         X = np.random.uniform(lb, ub, (pop, dim))
 
-    if V is None:
-        V = np.random.uniform(vmin, vmax, (pop, dim))
 
-    fitness = np.array([fobj(x) for x in X])
+    V = np.random.uniform(vmin, vmax, (pop, dim))
+
+    fitness = np.array([fobj(x,city_coordinates) for x in X])
 
     pBest = X.copy()
     pBestFitness = fitness.copy()
@@ -46,6 +46,7 @@ def PSO(pop, dim, ub, lb, fobj, vmax, vmin, maxIter, X=None, V=None):
     IterCurve = np.zeros(maxIter)
     timeE = 0
     for t in range(maxIter):
+       # print(t)
         for i in range(pop):
             r1 = np.random.rand(dim)
             r2 = np.random.rand(dim)
@@ -53,7 +54,7 @@ def PSO(pop, dim, ub, lb, fobj, vmax, vmin, maxIter, X=None, V=None):
             V[i] = BoundaryCheck(V[i], vmax, vmin)
             Xnew[i] = X[i] + V[i]
             Xnew[i] = BoundaryCheck(Xnew[i], ub, lb)
-            fitnessNew[i] = fobj(Xnew[i])
+            fitnessNew[i] = fobj(Xnew[i],city_coordinates)
 
             if fitnessNew[i] < pBestFitness[i]:
                 pBest[i] = Xnew[i].copy()

@@ -1,14 +1,16 @@
 import time
 from math import inf
-
+from multiprocessing import Pool
 import numpy as np
 from tensorboardX import SummaryWriter
 from tqdm import tqdm, _tqdm
-
+import multiprocessing as mp
 from Actor_Critic.env.step import step
+from Algorithm.FOA import FOA
 from Algorithm.GWO import GWO
 from Algorithm.PSO import PSO
 from Algorithm.SCA import SCA
+from Algorithm.WDO import WDO
 from utils.TSPGenerate import generate_tsp_coordinates
 from utils.compare_numbers import compare_numbers, calculate_difference
 # from test.test1 import YBest_Pos
@@ -16,10 +18,32 @@ from utils.compare_numbers import compare_numbers, calculate_difference
 from utils.pltdraw import plot_city_coordinates_line
 import datetime
 
+# 定义执行每个优化算法的函数
+def run_pso(args):
+    pop, dim, ub, lb, fun1, vmax, vmin, maxIter, X, city_coordinates = args
+    fun1_with_coordinates = lambda x,city_coordinates: fun1(x,city_coordinates)  # 使用lambda来创建一个新函数，它调用fun1并传递city_coordinates
+    return PSO(pop, dim, ub, lb, fun1_with_coordinates, vmax, vmin, maxIter, X,city_coordinates)
+
+def run_gwo(args):
+    pop, dim, ub, lb, fun1,  maxIter, X, city_coordinates = args
+    fun1_with_coordinates = lambda x,city_coordinates: fun1(x,city_coordinates)  # 使用lambda来创建一个新函数，它调用fun1并传递city_coordinates
+    return GWO(pop, dim, ub, lb, fun1_with_coordinates, maxIter, X,city_coordinates)
+
+def run_sca(args):
+    pop, dim, ub, lb, fun1, maxIter, X, city_coordinates = args
+    fun1_with_coordinates = lambda x,city_coordinates: fun1(x,city_coordinates)  # 使用lambda来创建一个新函数，它调用fun1并传递city_coordinates
+    return SCA(pop, dim, ub, lb, fun1_with_coordinates, maxIter, X,city_coordinates)
+
+def run_foa(args):
+    pop, dim, ub, lb, fun1, maxIter, X, city_coordinates = args
+    fun1_with_coordinates = lambda x,city_coordinates: fun1(x,city_coordinates)  # 使用lambda来创建一个新函数，它调用fun1并传递city_coordinates
+    return WDO(pop, dim, ub, lb, fun1_with_coordinates, maxIter, X,city_coordinates)
 
 
-def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter, X, agent, num_episodes,
-                          city_coordinates,file):
+
+
+
+def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter, X, agent, num_episodes,file):
 
     global current_time
     writer = SummaryWriter('../runs')
@@ -33,6 +57,7 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
             # ... do some work ...
             # print("train" + " " + str(i_episode))
             episode_return = 0
+            global city_coordinates
             city_coordinates = generate_tsp_coordinates(dim, 0, 100)
             transition_dict = {'statess': [], 'actions': [], 'next_states': [], 'rewards': [], 'cost': [], 'dones': [],
                                'Best_fitnesss': []}
@@ -52,8 +77,46 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
 
             probs_history = []
             # 循环前计算初始值
-            fitness = np.min(np.array([fun1(pos) for pos in states[0]]))
+            fitness = np.min(np.array([fun1(pos,city_coordinates) for pos in states[0]]))
             # 新设计：在进行强化学习算法之前，先跑一下四个自行算法，获得相应的最优解，强化学习需要比这里的解跑的好，跑的快。
+            # 以下为多线程计算：准备每个算法的参数
+            pso_args = (pop, dim, ub, lb, fun1, vmax, vmin, EmaxIter, X.copy(), city_coordinates)
+            gwo_args = (pop, dim, ub, lb, fun1, EmaxIter, X.copy(), city_coordinates)
+            sca_args = (pop, dim, ub, lb, fun1, EmaxIter, X.copy(), city_coordinates)
+            foa_args = (pop, dim, ub, lb, fun1, EmaxIter, X.copy(), city_coordinates)
+            # 创建进程池
+            pool = Pool(processes=4)
+            # 异步运行算法
+            pso_result = pool.apply_async(run_pso, (pso_args,))
+            gwo_result = pool.apply_async(run_gwo, (gwo_args,))
+            sca_result = pool.apply_async(run_sca, (sca_args,))
+            foa_result = pool.apply_async(run_foa, (foa_args,))
+            # 关闭进程池并等待所有进程完成
+            pool.close()
+            pool.join()
+            # 获取结果
+            time1, X1, Best_Pos1, Best_fitness1, IterCurve1 = pso_result.get()
+            time2, X2, Best_Pos2, Best_fitness2, IterCurve2 = gwo_result.get()
+            time3, X3, Best_Pos3, Best_fitness3, IterCurve3 = sca_result.get()
+            time4, X4, Best_Pos4, Best_fitness4, IterCurve4 = foa_result.get()
+            file.write(" 1-")
+            print(" 1-", end="")
+            file.write(str(Best_fitness1))
+            print(Best_fitness1, end="")
+            file.write(" 2-")
+            print(" 2-", end="")
+            file.write(str(Best_fitness2))
+            print(Best_fitness2, end="")
+            file.write(" 3-")
+            print(" 3-", end="")
+            file.write(str(Best_fitness3))
+            print(Best_fitness3, end="")
+            file.write(" 4-")
+            print(" 4-", end="")
+            file.write(str(Best_fitness4))
+            print(Best_fitness4, end="")
+            '''
+            #以下是单线程算法
             time1, X1, Best_Pos1, Best_fitness1, IterCurve1 = PSO(pop, dim, ub, lb, fun1, vmax, vmin, EmaxIter,
                                                                   X.copy())  # 877
             file.write(" 1-")
@@ -70,12 +133,12 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
             print(" 3-", end="")
             file.write(str(Best_fitness3))
             print(Best_fitness3, end="")
-            time4, X4, Best_Pos4, Best_fitness4, IterCurve4 = GWO(pop, dim, ub, lb, fun1, EmaxIter, X.copy())  # 607
+            time4, X4, Best_Pos4, Best_fitness4, IterCurve4 = FOA(pop, dim, ub, lb, fun1, EmaxIter, X.copy())  # 607
             print(" 4-", end="")
             file.write(" 4-")
             print(Best_fitness4, end="")
             file.write(str(Best_fitness4))
-
+'''
             Best_fitness = fitness
             while not done:
                 iter = iter + 1
@@ -87,7 +150,7 @@ def train_on_policy_agent(EmaxIter, pop, dim, ub, lb, fun1, vmax, vmin, maxIter,
                 # states = np.argsort(states)
                 time, next_state, reward, done, Best_fitness, Best_Pos, _ = step(action, pop, dim, ub, lb, fun1, vmax,
                                                                                  vmin,
-                                                                                 maxIter, state, states, Best_fitness)
+                                                                                 maxIter, state, states, Best_fitness,city_coordinates)
 
                 # print(iter)
                 transition_dict['statess'].append(states.copy())

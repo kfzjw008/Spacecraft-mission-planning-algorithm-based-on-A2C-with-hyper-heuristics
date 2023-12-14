@@ -17,7 +17,7 @@ from utils.initialization import initialization
 %   Best_fitness: 最优位置对应的适应度值
 %   IterCure:  用于记录每次迭代的最佳适应度，即后续用来绘制迭代曲线。
 '''
-def GWO(pop, dim, ub, lb, fobj, maxIter, Positions=None):
+def GWO(pop, dim, ub, lb, fobj, maxIter, Positions,city_coordinates):
     # 定义Alpha，Beta，Delta狼的位置和适应度
     Alpha_pos = np.zeros(dim)
     Alpha_score = float('inf')
@@ -33,7 +33,7 @@ def GWO(pop, dim, ub, lb, fobj, maxIter, Positions=None):
         Positions = initialization(pop, ub, lb, dim)
 
     # 计算适应度值
-    fitness = np.array([fobj(pos) for pos in Positions])
+    fitness = np.array([fobj(pos,city_coordinates) for pos in Positions])
 
     # 对适应度排序，找到Alpha，Beta，Delta狼
     sorted_fitness = np.argsort(fitness)
@@ -52,6 +52,7 @@ def GWO(pop, dim, ub, lb, fobj, maxIter, Positions=None):
     IterCurve = np.zeros(maxIter)
     timeE = 0
     for t in range(maxIter):
+        #print(t)
         a = 2 - t * (2 / maxIter)
 
         for i in range(pop):
@@ -83,7 +84,7 @@ def GWO(pop, dim, ub, lb, fobj, maxIter, Positions=None):
             Positions[i] = BoundaryCheck(Positions[i], ub, lb)
 
         # 计算适应度值
-        fitness = np.array([fobj(pos) for pos in Positions])
+        fitness = np.array([fobj(pos,city_coordinates) for pos in Positions])
 
         # 更新 Alpha, Beta,  Delta狼
         sorted_fitness = np.argsort(fitness)
